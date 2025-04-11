@@ -16,11 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -35,18 +30,13 @@ const profileSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
 });
 
-const otpSchema = z.object({
-  otp: z.string().length(6, { message: "Please enter the 6-digit code" }),
-});
-
 type AuthFormValues = z.infer<typeof authSchema>;
 type ProfileFormValues = z.infer<typeof profileSchema>;
-type OTPFormValues = z.infer<typeof otpSchema>;
 
 export const AuthForm = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [verificationStep, setVerificationStep] = useState<'auth' | 'otp' | 'profile'>('auth');
+  const [verificationStep, setVerificationStep] = useState<'auth' | 'profile'>('auth');
   const [email, setEmail] = useState('');
   const { signIn, signUp, isLoading, updateProfile, user } = useAuth();
 
@@ -54,14 +44,18 @@ export const AuthForm = () => {
   useEffect(() => {
     if (user) {
       const checkProfile = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', user.id)
-          .single();
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', user.id)
+            .single();
           
-        if (!error && (!data.name || data.name.trim() === '')) {
-          setVerificationStep('profile');
+          if (data && (!data.name || data.name.trim() === '')) {
+            setVerificationStep('profile');
+          }
+        } catch (error) {
+          console.error('Error checking profile:', error);
         }
       };
       
@@ -77,13 +71,6 @@ export const AuthForm = () => {
     defaultValues: {
       email: "",
       password: "",
-    },
-  });
-
-  const otpForm = useForm<OTPFormValues>({
-    resolver: zodResolver(otpSchema),
-    defaultValues: {
-      otp: "",
     },
   });
 
@@ -243,7 +230,7 @@ export const AuthForm = () => {
             />
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-xenon-primary to-xenon-secondary hover:from-xenon-secondary hover:to-xenon-primary text-white"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -261,7 +248,7 @@ export const AuthForm = () => {
       <CardFooter className="flex justify-center">
         <Button 
           variant="link" 
-          className="text-xenon-light hover:text-xenon-primary"
+          className="text-purple-300 hover:text-purple-400"
           onClick={toggleAuthMode}
           disabled={isLoading}
         >
