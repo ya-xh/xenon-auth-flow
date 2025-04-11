@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import AuthForm from "@/components/AuthForm";
+import AuthFormContainer from "@/components/auth/AuthFormContainer";
 import SplashScreen from "@/components/SplashScreen";
 
 export default function AuthPage() {
@@ -24,7 +24,7 @@ export default function AuthPage() {
             <h1 className="text-5xl md:text-7xl font-mono font-light text-center bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">xenon ai</h1>
           </div>
           
-          <AuthForm />
+          <AuthFormContainer />
           
           <p className="text-gray-500 text-xs mt-8 text-center">
             © {new Date().getFullYear()} Xenon AI. All rights reserved.
