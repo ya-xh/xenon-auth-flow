@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -25,14 +31,48 @@ const authSchema = z.object({
     .min(8, { message: "Password must be at least 8 characters" }),
 });
 
+const profileSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+});
+
+const otpSchema = z.object({
+  otp: z.string().length(6, { message: "Please enter the 6-digit code" }),
+});
+
 type AuthFormValues = z.infer<typeof authSchema>;
+type ProfileFormValues = z.infer<typeof profileSchema>;
+type OTPFormValues = z.infer<typeof otpSchema>;
 
 export const AuthForm = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, signUp, isLoading } = useAuth();
+  const [verificationStep, setVerificationStep] = useState<'auth' | 'otp' | 'profile'>('auth');
+  const [email, setEmail] = useState('');
+  const { signIn, signUp, isLoading, updateProfile, user } = useAuth();
 
-  const form = useForm<AuthFormValues>({
+  // If user is logged in and on the auth page, check if we need to ask for their name
+  useEffect(() => {
+    if (user) {
+      const checkProfile = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .single();
+          
+        if (!error && (!data.name || data.name.trim() === '')) {
+          setVerificationStep('profile');
+        }
+      };
+      
+      // Use setTimeout to avoid deadlock with onAuthStateChange
+      setTimeout(() => {
+        checkProfile();
+      }, 0);
+    }
+  }, [user]);
+
+  const authForm = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
     defaultValues: {
       email: "",
@@ -40,10 +80,26 @@ export const AuthForm = () => {
     },
   });
 
-  const onSubmit = async (data: AuthFormValues) => {
+  const otpForm = useForm<OTPFormValues>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: {
+      otp: "",
+    },
+  });
+
+  const profileForm = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
+  const onAuthSubmit = async (data: AuthFormValues) => {
     try {
+      setEmail(data.email);
       if (isSignUp) {
         await signUp(data.email, data.password);
+        // For sign up, we don't switch to OTP step here because Supabase handles email verification
       } else {
         await signIn(data.email, data.password);
       }
@@ -52,13 +108,78 @@ export const AuthForm = () => {
     }
   };
 
-  const toggleAuthMode = () => {
-    setIsSignUp(!isSignUp);
-    form.reset();
+  const onProfileSubmit = async (data: ProfileFormValues) => {
+    try {
+      await updateProfile(data.name);
+      // Profile updated, verification flow complete
+    } catch (error) {
+      console.error("Profile update error:", error);
+    }
   };
 
+  const toggleAuthMode = () => {
+    setIsSignUp(!isSignUp);
+    authForm.reset();
+  };
+
+  // Conditionally render the appropriate form based on the verification step
+  if (verificationStep === 'profile') {
+    return (
+      <Card className="w-full max-w-md bg-black/70 backdrop-blur-lg border border-purple-600/30 shadow-xl">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl font-medium text-center text-white">
+            Complete Your Profile
+          </CardTitle>
+          <CardDescription className="text-center text-gray-400">
+            Please tell us your name to complete setup
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...profileForm}>
+            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+              <FormField
+                control={profileForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-200">Your Name</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          className="bg-gray-900/50 border-gray-700 text-white focus-visible:ring-xenon-primary pl-10" 
+                          placeholder="Enter your name"
+                          {...field}
+                        />
+                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-xenon-primary to-xenon-secondary hover:from-xenon-secondary hover:to-xenon-primary text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>Complete Setup</>
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="w-full max-w-md bg-white/5 backdrop-blur-lg border-gray-800/30 shadow-xl">
+    <Card className="w-full max-w-md bg-black/70 backdrop-blur-lg border border-purple-600/30 shadow-xl">
       <CardHeader>
         <CardTitle className="text-2xl font-medium text-center text-white">
           {isSignUp ? "Create Account" : "Welcome Back"}
@@ -70,10 +191,10 @@ export const AuthForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Form {...authForm}>
+          <form onSubmit={authForm.handleSubmit(onAuthSubmit)} className="space-y-6">
             <FormField
-              control={form.control}
+              control={authForm.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -90,7 +211,7 @@ export const AuthForm = () => {
               )}
             />
             <FormField
-              control={form.control}
+              control={authForm.control}
               name="password"
               render={({ field }) => (
                 <FormItem>

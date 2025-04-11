@@ -1,18 +1,17 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-type User = {
-  id: string;
-  email: string;
-} | null;
-
 type AuthContextType = {
-  user: User;
+  user: User | null;
+  session: Session | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isLoading: boolean;
+  updateProfile: (name: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,47 +25,52 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Simulate checking for session
+  // Set up auth state listener
   useEffect(() => {
-    // Check for existing session in localStorage (temporary simulation)
-    const storedUser = localStorage.getItem('xenon_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user data');
-        localStorage.removeItem('xenon_user');
+    // First set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // This is a temporary simulation of authentication until Supabase is connected
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      // For demo purposes - in a real app, this would be a Supabase auth call
-      const mockUser = { id: 'user-123', email };
-      setUser(mockUser);
-      localStorage.setItem('xenon_user', JSON.stringify(mockUser));
+      if (error) throw error;
+      
       toast({
         title: "Success!",
         description: "You've successfully signed in",
       });
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign in error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to sign in. Please try again.",
+        description: error.message || "Failed to sign in. Please try again.",
       });
       throw error;
     } finally {
@@ -77,24 +81,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes - in a real app, this would be a Supabase auth call
-      const mockUser = { id: 'new-user-' + Math.random().toString(36).substring(2, 9), email };
-      setUser(mockUser);
-      localStorage.setItem('xenon_user', JSON.stringify(mockUser));
-      toast({
-        title: "Account created!",
-        description: "Your account has been successfully created",
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
       });
       
-    } catch (error) {
+      if (error) throw error;
+      
+      toast({
+        title: "Verification email sent!",
+        description: "Please check your email to verify your account",
+      });
+    } catch (error: any) {
       console.error('Sign up error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create account. Please try again.",
+        description: error.message || "Failed to create account. Please try again.",
       });
       throw error;
     } finally {
@@ -105,23 +111,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { error } = await supabase.auth.signOut();
       
-      // For demo purposes
-      setUser(null);
-      localStorage.removeItem('xenon_user');
+      if (error) throw error;
+      
       toast({
         title: "Signed out",
         description: "You've been successfully signed out",
       });
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign out error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to sign out. Please try again.",
+        description: error.message || "Failed to sign out. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateProfile = async (name: string) => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated",
+      });
+    } catch (error: any) {
+      console.error('Profile update error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update profile. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -130,10 +161,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = {
     user,
+    session,
     signIn,
     signUp,
     signOut,
-    isLoading
+    isLoading,
+    updateProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

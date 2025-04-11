@@ -19,9 +19,9 @@ export default function AuthPage() {
       {showSplash ? (
         <SplashScreen onComplete={() => setShowSplash(false)} />
       ) : (
-        <div className="min-h-screen bg-gradient-to-br from-xenon-dark via-black to-xenon-dark flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-black via-xenon-dark to-black flex flex-col items-center justify-center p-4">
           <div className="w-full max-w-md mb-12">
-            <h1 className="text-xl text-xenon-primary font-mono font-light text-center">xenon ai</h1>
+            <h1 className="text-3xl md:text-4xl text-xenon-primary font-mono font-light text-center bg-gradient-to-r from-xenon-primary to-xenon-secondary bg-clip-text text-transparent">xenon ai</h1>
           </div>
           
           <AuthForm />
