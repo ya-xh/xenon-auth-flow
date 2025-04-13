@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -25,6 +26,11 @@ export const AuthFormContainer = () => {
             .select('name, user_role, focus_hours')
             .eq('id', user.id)
             .single();
+          
+          if (error) {
+            console.error('Error checking profile:', error);
+            return;
+          }
           
           if (data) {
             // If name is missing, go to profile step
