@@ -13,6 +13,7 @@ interface TodoItem {
   text: string;
   completed: boolean;
   user_id?: string;
+  created_at?: string;
 }
 
 export default function TodoPage() {
@@ -74,10 +75,7 @@ export default function TodoPage() {
   const saveTodos = async (updatedTodos: TodoItem[]) => {
     setTodos(updatedTodos);
     
-    if (user) {
-      // For authenticated users, we save to Supabase
-      // (but we don't need to sync the entire list each time)
-    } else {
+    if (!user) {
       // For guest users, save to localStorage
       localStorage.setItem('xenon_todos', JSON.stringify(updatedTodos));
     }
@@ -156,8 +154,17 @@ export default function TodoPage() {
       }
       
       // Update local state
+      const todoToComplete = todos.find(t => t.id === id);
       const updatedTodos = todos.filter(todo => todo.id !== id);
       saveTodos(updatedTodos);
+      
+      // Save to completed todos in localStorage for guest users
+      if (!user && todoToComplete) {
+        const completedTodo = {...todoToComplete, completed: true};
+        const savedCompleted = localStorage.getItem('xenon_completed_todos');
+        const completedTodos = savedCompleted ? JSON.parse(savedCompleted) : [];
+        localStorage.setItem('xenon_completed_todos', JSON.stringify([...completedTodos, completedTodo]));
+      }
       
     } catch (error) {
       console.error("Error completing todo:", error);

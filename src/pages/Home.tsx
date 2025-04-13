@@ -4,6 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import FlipClock from "@/components/FlipClock";
 
 interface UserProfile {
   name: string;
@@ -11,12 +13,21 @@ interface UserProfile {
   focus_hours?: number;
 }
 
+interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [recentTodos, setRecentTodos] = useState<TodoItem[]>([]);
+  const [todosLoading, setTodosLoading] = useState(false);
 
+  // Fetch user profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       setIsLoading(true);
@@ -63,6 +74,43 @@ export default function HomePage() {
     fetchUserProfile();
   }, [user]);
 
+  // Fetch recent todos
+  useEffect(() => {
+    const fetchRecentTodos = async () => {
+      setTodosLoading(true);
+      try {
+        if (user) {
+          // Fetch from Supabase
+          const { data, error } = await supabase
+            .from('todos')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('completed', false)
+            .order('created_at', { ascending: false })
+            .limit(3);
+          
+          if (error) throw error;
+          if (data) {
+            setRecentTodos(data as TodoItem[]);
+          }
+        } else {
+          // Fetch from localStorage for guests
+          const saved = localStorage.getItem('xenon_todos');
+          if (saved) {
+            const allTodos = JSON.parse(saved);
+            setRecentTodos(allTodos.slice(0, 3)); // Get only the most recent 3
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching todos:', error);
+      } finally {
+        setTodosLoading(false);
+      }
+    };
+    
+    fetchRecentTodos();
+  }, [user]);
+
   const getRoleDisplay = (role?: string) => {
     if (!role) return '';
     
@@ -85,7 +133,7 @@ export default function HomePage() {
             <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full">
+          <div className="flex flex-col items-center justify-start h-full pt-4">
             <h1 className="text-4xl md:text-6xl font-mono font-light mb-6 text-center bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
               Welcome to Xenon AI
               {userProfile?.name ? `, ${userProfile.name}` : isGuest ? ', Guest' : ''}
@@ -97,13 +145,46 @@ export default function HomePage() {
                 {userProfile.focus_hours && ` • ${userProfile.focus_hours} hours focus time`}
               </p>
             )}
+
+            {/* Flip Clock */}
+            <div className="my-10 w-full max-w-md">
+              <FlipClock />
+            </div>
             
-            <p className="text-gray-400 text-center max-w-md mb-12">
-              Your personal AI assistant is being configured. 
-              Check back soon for exciting new features.
-            </p>
-            
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 animate-pulse"></div>
+            {/* Recent Todos Section */}
+            <div className="w-full max-w-md mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl text-purple-300 font-semibold">Recent Tasks</h2>
+                <Link 
+                  to="/todo" 
+                  className="text-sm text-purple-400 hover:text-purple-300 underline"
+                >
+                  View All
+                </Link>
+              </div>
+              
+              {todosLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 text-purple-500 animate-spin" />
+                </div>
+              ) : recentTodos.length > 0 ? (
+                <ul className="space-y-2">
+                  {recentTodos.map(todo => (
+                    <Link 
+                      to="/todo" 
+                      key={todo.id}
+                      className="block p-3 rounded-md border border-gray-800 bg-gray-900/30 hover:bg-gray-800/30 transition-colors"
+                    >
+                      <span className="text-gray-200">{todo.text}</span>
+                    </Link>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-400 text-center py-4">
+                  No tasks yet. Add one from the Todo page.
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>

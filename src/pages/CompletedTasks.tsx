@@ -12,6 +12,7 @@ interface TodoItem {
   text: string;
   completed: boolean;
   completed_at?: string;
+  created_at?: string;
   user_id?: string;
 }
 
@@ -35,7 +36,7 @@ export default function CompletedTasksPage() {
             .select('*')
             .eq('user_id', user.id)
             .eq('completed', true)
-            .order('completed_at', { ascending: false });
+            .order('created_at', { ascending: false });
           
           if (error) throw error;
           
@@ -116,7 +117,7 @@ export default function CompletedTasksPage() {
         // Update in Supabase
         const { error } = await supabase
           .from('todos')
-          .update({ completed: false, completed_at: null })
+          .update({ completed: false })
           .eq('id', id)
           .eq('user_id', user.id);
         

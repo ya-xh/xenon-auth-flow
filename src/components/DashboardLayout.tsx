@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import { Navigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, CheckCircle, ListTodo, Settings, Menu, X } from "lucide-react";
+import { MessageSquare, CheckCircle, ListTodo, Settings, Menu, X, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -77,13 +77,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       ? "bg-purple-600/10 text-purple-400 border-l-2 border-purple-600" 
       : "text-gray-400 hover:text-purple-400 hover:bg-purple-600/5";
   };
+  
+  const isActiveBottom = (path: string) => {
+    return location.pathname === path 
+      ? "text-purple-400" 
+      : "text-gray-400";
+  };
 
   const toggleMobileNav = () => {
     setShowMobileNav(!showMobileNav);
   };
 
   const navigationItems = [
-    { path: '/home', label: 'Home', icon: <MessageSquare className="mr-3 h-5 w-5" /> },
+    { path: '/home', label: 'Home', icon: <Home className="mr-3 h-5 w-5" /> },
     { path: '/todo', label: 'To-do', icon: <ListTodo className="mr-3 h-5 w-5" /> },
     { path: '/completed', label: 'Completed Tasks', icon: <CheckCircle className="mr-3 h-5 w-5" /> },
     { path: '/settings', label: 'Settings', icon: <Settings className="mr-3 h-5 w-5" /> },
@@ -203,10 +209,26 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
         
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto bg-black">
+        <main className="flex-1 overflow-y-auto bg-black pb-16 md:pb-0">
           {children}
         </main>
       </div>
+      
+      {/* Bottom navigation for mobile */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 z-40">
+        <div className="flex justify-around">
+          {navigationItems.map(item => (
+            <Link 
+              key={item.path}
+              to={item.path}
+              className={`flex flex-col items-center p-3 ${isActiveBottom(item.path)}`}
+            >
+              {React.cloneElement(item.icon, { className: "h-5 w-5 mb-1" })}
+              <span className="text-xs">{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };

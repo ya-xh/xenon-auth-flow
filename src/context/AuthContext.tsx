@@ -107,10 +107,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) throw error;
       
-      toast({
-        title: "Success!",
-        description: "You've successfully signed in",
-      });
+      // Check if there are guest data to migrate
+      const hasGuestData = localStorage.getItem('xenon_todos') || localStorage.getItem('xenon_completed_todos');
+      
+      if (hasGuestData) {
+        toast({
+          title: "Guest data detected",
+          description: "Your local tasks will be synced with your account",
+        });
+      } else {
+        toast({
+          title: "Success!",
+          description: "You've successfully signed in",
+        });
+      }
     } catch (error: any) {
       console.error('Sign in error:', error);
       toast({
@@ -152,33 +162,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // First check if user already exists
-      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
+      // First check if user already exists with this email
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password: "dummy_password_to_check_existence"
       });
       
-      // If no error or specific error that indicates user might exist
-      if (!checkError || checkError.message.includes("Invalid login credentials")) {
-        // Try to get the user
-        const { data } = await supabase.from('profiles')
-                          .select('id')
-                          .eq('id', existingUser?.user?.id ?? '')
-                          .single();
-                          
-        if (data || existingUser?.user) {
-          toast({
-            variant: "destructive",
-            title: "Account already exists",
-            description: "An account with this email already exists. Please sign in instead.",
-          });
-          setIsLoading(false);
-          throw new Error("Account already exists");
-        }
+      if (data?.user || (error && error.message.includes('Invalid login credentials'))) {
+        // This indicates the email exists but password doesn't match
+        toast({
+          variant: "destructive",
+          title: "Account already exists",
+          description: "An account with this email already exists. Please sign in instead.",
+        });
+        setIsLoading(false);
+        throw new Error("Account already exists");
       }
       
       // If we got here, the user doesn't exist, so create a new account
-      const { error } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -186,7 +188,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
       
-      if (error) throw error;
+      if (signUpError) throw signUpError;
       
       toast({
         title: "Verification email sent!",
