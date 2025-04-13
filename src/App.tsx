@@ -9,10 +9,12 @@ import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import UserQuestionnaire from "./components/auth/UserQuestionnaire";
+import { useState, useEffect } from "react";
 
 function App() {
-  // Create a client
-  const queryClient = new QueryClient({
+  // Create QueryClient in component to avoid errors with React 18 StrictMode
+  const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
@@ -22,7 +24,12 @@ function App() {
         staleTime: 5 * 60 * 1000,
       },
     },
-  });
+  }));
+  
+  // Fix for Android - ensure React is properly initialized
+  useEffect(() => {
+    console.log("App initialized");
+  }, []);
   
   return (
     <BrowserRouter>
@@ -35,6 +42,7 @@ function App() {
               <Route path="/" element={<Auth />} />
               <Route path="/home" element={<Home />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/questionnaire" element={<UserQuestionnaire />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>

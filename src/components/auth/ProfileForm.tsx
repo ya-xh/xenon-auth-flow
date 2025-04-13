@@ -18,7 +18,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { profileSchema } from "./authSchemas";
 import type { ProfileFormValues } from "./authSchemas";
 
-const ProfileForm = () => {
+interface ProfileFormProps {
+  onComplete?: () => void;
+}
+
+const ProfileForm = ({ onComplete }: ProfileFormProps) => {
   const { updateProfile, isLoading } = useAuth();
 
   const form = useForm<ProfileFormValues>({
@@ -31,6 +35,9 @@ const ProfileForm = () => {
   const onSubmit = async (data: ProfileFormValues) => {
     try {
       await updateProfile(data.name);
+      if (onComplete) {
+        onComplete();
+      }
     } catch (error) {
       console.error("Profile update error:", error);
     }
@@ -71,7 +78,7 @@ const ProfileForm = () => {
             />
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-xenon-primary to-xenon-secondary hover:from-xenon-secondary hover:to-xenon-primary text-white"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -80,7 +87,7 @@ const ProfileForm = () => {
                   Saving...
                 </>
               ) : (
-                <>Complete Setup</>
+                <>Continue</>
               )}
             </Button>
           </form>

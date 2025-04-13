@@ -10,7 +10,7 @@ export default function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="flex flex-col h-full max-w-4xl mx-auto p-4">
-        <h1 className="text-2xl md:text-3xl text-xenon-primary font-light mb-6">
+        <h1 className="text-2xl md:text-3xl text-purple-400 font-light mb-6">
           Settings
         </h1>
         
@@ -24,7 +24,7 @@ export default function SettingsPage() {
         <div className="border-t border-gray-800 pt-4 mt-auto">
           <Button 
             variant="ghost" 
-            className="w-full justify-center text-gray-400 hover:text-xenon-primary hover:bg-xenon-primary/5"
+            className="w-full justify-center text-gray-400 hover:text-purple-400 hover:bg-purple-600/5"
             onClick={() => signOut()}
           >
             <LogOut className="mr-2 h-5 w-5" />

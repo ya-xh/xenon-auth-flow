@@ -1,31 +1,47 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import EmailPasswordForm from "./EmailPasswordForm";
 import ProfileForm from "./ProfileForm";
+import UserQuestionnaire from "./UserQuestionnaire";
 import GoogleAuthButton from "./GoogleAuthButton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const AuthFormContainer = () => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [verificationStep, setVerificationStep] = useState<'auth' | 'profile'>('auth');
+  const [verificationStep, setVerificationStep] = useState<'auth' | 'profile' | 'questionnaire'>('auth');
   const [email, setEmail] = useState('');
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-  // If user is logged in and on the auth page, check if we need to ask for their name
+  // If user is logged in, check if we need to ask for their name or preferences
   useEffect(() => {
     if (user) {
       const checkProfile = async () => {
         try {
           const { data } = await supabase
             .from('profiles')
-            .select('name')
+            .select('name, user_role, focus_hours')
             .eq('id', user.id)
             .single();
           
-          if (data && (!data.name || data.name.trim() === '')) {
-            setVerificationStep('profile');
+          if (data) {
+            // If name is missing, go to profile step
+            if (!data.name || data.name.trim() === '') {
+              setVerificationStep('profile');
+              return;
+            }
+            
+            // If role or focus hours are missing, go to questionnaire step
+            if (!data.user_role || !data.focus_hours) {
+              setVerificationStep('questionnaire');
+              return;
+            }
+            
+            // If all data is present, navigate to home
+            navigate('/home');
           }
         } catch (error) {
           console.error('Error checking profile:', error);
@@ -37,7 +53,7 @@ export const AuthFormContainer = () => {
         checkProfile();
       }, 0);
     }
-  }, [user]);
+  }, [user, navigate]);
 
   const toggleAuthMode = () => {
     setIsSignUp(!isSignUp);
@@ -45,7 +61,11 @@ export const AuthFormContainer = () => {
 
   // Conditionally render the appropriate form based on the verification step
   if (verificationStep === 'profile') {
-    return <ProfileForm />;
+    return <ProfileForm onComplete={() => setVerificationStep('questionnaire')} />;
+  }
+
+  if (verificationStep === 'questionnaire') {
+    return <UserQuestionnaire />;
   }
 
   return (
