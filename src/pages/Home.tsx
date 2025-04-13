@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -13,9 +12,26 @@ interface UserProfile {
 export default function HomePage() {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
+      // Check if this is a skipped login user
+      const storedRole = localStorage.getItem('xenon_user_role');
+      const storedHours = localStorage.getItem('xenon_focus_hours');
+      
+      if (storedRole && !user) {
+        // This is a guest user who skipped login
+        setUserProfile({
+          name: 'Guest',
+          user_role: storedRole,
+          focus_hours: storedHours ? parseInt(storedHours) : undefined
+        });
+        setIsGuest(true);
+        return;
+      }
+      
+      // Otherwise fetch from Supabase if logged in
       if (user) {
         try {
           const { data, error } = await supabase
@@ -58,7 +74,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center justify-center h-full">
           <h1 className="text-4xl md:text-6xl font-mono font-light mb-6 text-center bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
             Welcome to Xenon AI
-            {userProfile?.name ? `, ${userProfile.name}` : ''}
+            {userProfile?.name && !isGuest ? `, ${userProfile.name}` : isGuest ? ', Guest' : ''}
           </h1>
           
           {userProfile?.user_role && (

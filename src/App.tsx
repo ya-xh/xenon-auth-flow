@@ -9,7 +9,9 @@ import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import UserQuestionnaire from "./components/auth/UserQuestionnaire";
+import QuestionnairePage from "./pages/Questionnaire";
+import TodoPage from "./pages/Todo";
+import CompletedTasksPage from "./pages/CompletedTasks";
 import { useState, useEffect } from "react";
 
 function App() {
@@ -42,7 +44,9 @@ function App() {
               <Route path="/" element={<Auth />} />
               <Route path="/home" element={<Home />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/questionnaire" element={<UserQuestionnaire />} />
+              <Route path="/questionnaire" element={<QuestionnairePage />} />
+              <Route path="/todo" element={<TodoPage />} />
+              <Route path="/completed" element={<CompletedTasksPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>

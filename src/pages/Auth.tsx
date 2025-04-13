@@ -33,7 +33,8 @@ export default function AuthPage() {
 
   // Handle skip login action
   const handleSkipLogin = () => {
-    navigate('/home');
+    // Skip directly to questionnaire without login
+    navigate('/questionnaire');
   };
 
   // If user is already authenticated, redirect to home
