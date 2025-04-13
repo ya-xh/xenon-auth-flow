@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import AuthFormContainer from "@/components/auth/AuthFormContainer";
 import SplashScreen from "@/components/SplashScreen";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AuthPage() {
   const [showSplash, setShowSplash] = useState(true);
@@ -15,12 +16,12 @@ export default function AuthPage() {
   useEffect(() => {
     const checkEmailVerification = async () => {
       if (user && session) {
-        // Refresh user data to get latest verification status
-        const { data: { user: refreshedUser } } = await session.user.refresh();
-        
-        // If user's email is verified, proceed to the app
-        if (refreshedUser && refreshedUser.email_confirmed_at) {
+        try {
+          // Refresh session to get latest verification status
+          await supabase.auth.refreshSession();
           navigate('/home');
+        } catch (error) {
+          console.error("Error refreshing session:", error);
         }
       }
     };

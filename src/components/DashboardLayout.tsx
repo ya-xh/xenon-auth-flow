@@ -1,4 +1,3 @@
-
 import { ReactNode } from "react";
 import { Navigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Settings, User, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -17,7 +16,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const [userName, setUserName] = useState<string>("");
   const [showMobileNav, setShowMobileNav] = useState(false);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   // Protect routes - redirect to auth if not logged in
   if (!user && !isLoading) {

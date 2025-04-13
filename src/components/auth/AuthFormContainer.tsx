@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -21,7 +20,7 @@ export const AuthFormContainer = () => {
     if (user) {
       const checkProfile = async () => {
         try {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('profiles')
             .select('name, user_role, focus_hours')
             .eq('id', user.id)

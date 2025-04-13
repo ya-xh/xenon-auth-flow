@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -18,14 +17,16 @@ export default function HomePage() {
     const fetchUserProfile = async () => {
       if (user) {
         try {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('profiles')
             .select('name, user_role, focus_hours')
             .eq('id', user.id)
             .single();
           
           if (data) {
-            setUserProfile(data);
+            setUserProfile(data as UserProfile);
+          } else if (error) {
+            console.error('Error fetching profile:', error);
           }
         } catch (error) {
           console.error('Error fetching profile:', error);
