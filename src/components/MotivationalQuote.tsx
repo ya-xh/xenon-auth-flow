@@ -79,10 +79,10 @@ const MotivationalQuote = () => {
   };
 
   return (
-    <Card className="w-full max-w-md bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border border-purple-500/30 p-6 rounded-lg shadow-lg">
-      <div className="flex items-center mb-4">
-        <Quote className="text-purple-400 mr-2" size={20} />
-        <h2 className="text-xl text-purple-400 font-semibold">Daily Inspiration</h2>
+    <Card className="w-full max-w-sm bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border border-purple-500/30 p-4 rounded-lg shadow-lg">
+      <div className="flex items-center mb-3">
+        <Quote className="text-purple-400 mr-2" size={16} />
+        <h2 className="text-lg text-purple-400 font-semibold">Daily Inspiration</h2>
         <Button 
           variant="ghost" 
           size="icon" 
@@ -90,25 +90,25 @@ const MotivationalQuote = () => {
           onClick={refreshQuote}
           disabled={isLoading}
         >
-          <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
         </Button>
       </div>
       
       {isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-6 w-full bg-purple-800/20" />
-          <Skeleton className="h-6 w-3/4 bg-purple-800/20" />
-          <Skeleton className="h-4 w-1/3 bg-purple-800/20 mt-4" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-full bg-purple-800/20" />
+          <Skeleton className="h-5 w-3/4 bg-purple-800/20" />
+          <Skeleton className="h-4 w-1/3 bg-purple-800/20 mt-3" />
         </div>
       ) : (
-        <div className="text-center py-4">
-          <p className="text-gray-200 text-lg italic">{quote.text}</p>
-          <p className="text-purple-300 mt-4 text-sm">— {quote.author}</p>
+        <div className="text-center py-2">
+          <p className="text-white text-md italic">{quote.text}</p>
+          <p className="text-purple-300 mt-3 text-xs">— {quote.author}</p>
         </div>
       )}
       
       {lastUpdated && (
-        <p className="text-gray-500 text-xs mt-4 text-right">
+        <p className="text-gray-500 text-xs mt-2 text-right">
           Updated {new Date(lastUpdated).toLocaleDateString()}
         </p>
       )}
