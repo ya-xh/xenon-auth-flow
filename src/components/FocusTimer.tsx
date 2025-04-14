@@ -80,13 +80,24 @@ const FocusTimer = () => {
     };
   }, [isRunning, focusGoal, notified, toast]);
   
+  // Set focus mode status for AI monitoring
+  useEffect(() => {
+    localStorage.setItem('xenon_focus_timer_active', isRunning ? 'true' : 'false');
+    
+    return () => {
+      if (!isRunning) {
+        localStorage.setItem('xenon_focus_timer_active', 'false');
+      }
+    };
+  }, [isRunning]);
+  
   const toggleTimer = () => {
     setIsRunning(!isRunning);
     
     if (!isRunning) {
       toast({
         title: "Focus time started",
-        description: "Stay focused and productive!",
+        description: "Stay focused and productive! App monitoring has been enabled.",
       });
     }
   };

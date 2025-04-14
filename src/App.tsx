@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import QuestionnairePage from "./pages/Questionnaire";
 import TodoPage from "./pages/Todo";
+import AIPage from "./pages/AI";
 import { useState, useEffect } from "react";
 
 function App() {
@@ -45,7 +46,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/questionnaire" element={<QuestionnairePage />} />
               <Route path="/todo" element={<TodoPage />} />
-              <Route path="/ai" element={<div>AI Assistant (Coming Soon)</div>} />
+              <Route path="/ai" element={<AIPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
