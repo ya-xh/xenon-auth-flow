@@ -1,5 +1,5 @@
 
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { Navigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
