@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import FlipClock from "@/components/FlipClock";
+import FocusTimer from "@/components/FocusTimer";
+import TaskProgressBar from "@/components/TaskProgressBar";
 
 interface UserProfile {
   name: string;
@@ -147,8 +149,18 @@ export default function HomePage() {
             )}
 
             {/* Flip Clock */}
-            <div className="my-10 w-full max-w-md">
+            <div className="my-6 w-full max-w-md">
               <FlipClock />
+            </div>
+            
+            {/* Focus Timer */}
+            <div className="my-6 w-full max-w-md">
+              <FocusTimer />
+            </div>
+            
+            {/* Task Progress */}
+            <div className="my-6 w-full max-w-md">
+              <TaskProgressBar />
             </div>
             
             {/* Recent Todos Section */}
@@ -190,4 +202,4 @@ export default function HomePage() {
       </div>
     </DashboardLayout>
   );
-}
+};
