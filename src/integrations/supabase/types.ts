@@ -11,6 +11,8 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          ai_monitoring_enabled: boolean | null
+          blocked_apps: string[] | null
           created_at: string
           focus_hours: number | null
           id: string
@@ -19,6 +21,8 @@ export type Database = {
           user_role: string | null
         }
         Insert: {
+          ai_monitoring_enabled?: boolean | null
+          blocked_apps?: string[] | null
           created_at?: string
           focus_hours?: number | null
           id: string
@@ -27,6 +31,8 @@ export type Database = {
           user_role?: string | null
         }
         Update: {
+          ai_monitoring_enabled?: boolean | null
+          blocked_apps?: string[] | null
           created_at?: string
           focus_hours?: number | null
           id?: string

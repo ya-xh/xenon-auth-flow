@@ -26,11 +26,16 @@ export default function AIPage() {
     const loadUserPreferences = async () => {
       try {
         if (user) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('profiles')
             .select('ai_monitoring_enabled, blocked_apps')
             .eq('id', user.id)
             .single();
+          
+          if (error) {
+            console.error("Error fetching profile:", error);
+            return;
+          }
           
           if (data) {
             setMonitoringEnabled(data.ai_monitoring_enabled || false);
@@ -62,13 +67,18 @@ export default function AIPage() {
   const savePreferences = async (monitoring: boolean, apps: string[]) => {
     try {
       if (user) {
-        await supabase
+        const { error } = await supabase
           .from('profiles')
           .update({
             ai_monitoring_enabled: monitoring,
             blocked_apps: apps
           })
           .eq('id', user.id);
+          
+        if (error) {
+          console.error("Error saving to database:", error);
+          throw error;
+        }
       } else {
         // For guest users
         localStorage.setItem('xenon_ai_monitoring', monitoring.toString());
