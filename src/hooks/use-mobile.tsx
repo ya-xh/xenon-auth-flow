@@ -2,14 +2,21 @@
 import { useState, useEffect } from 'react';
 
 export const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  // Initialize with window.innerWidth < 768 instead of false
+  const [isMobile, setIsMobile] = useState(() => {
+    // Initial check - runs server-side too
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
-    // Check initially
+    // Re-check on mount
     checkIfMobile();
 
     // Add event listener

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/card";
 
 const userRoleSchema = z.object({
+  name: z.string().min(1, "Please enter your name"),
   role: z.enum(["student", "professional", "freelancer", "entrepreneur", "other"], {
     required_error: "Please select your role",
   }),
@@ -48,6 +49,7 @@ export default function QuestionnairePage() {
   const form = useForm<UserRoleFormValues>({
     resolver: zodResolver(userRoleSchema),
     defaultValues: {
+      name: "",
       role: undefined,
       focusHours: "4",
     },
@@ -56,9 +58,13 @@ export default function QuestionnairePage() {
   const onSubmit = async (data: UserRoleFormValues) => {
     setSubmitting(true);
     try {
-      // For skipped login users, we just store the preferences in localStorage
+      // For skipped login users, we store the preferences in localStorage
+      localStorage.setItem('xenon_user_name', data.name);
       localStorage.setItem('xenon_user_role', data.role);
       localStorage.setItem('xenon_focus_hours', data.focusHours);
+      
+      // Mark that the user has completed onboarding
+      localStorage.setItem('xenon_onboarding_completed', 'true');
       
       // Navigate to home page after questionnaire
       navigate("/home");
@@ -84,6 +90,24 @@ export default function QuestionnairePage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-200">What's your name?</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter your name"
+                        className="bg-gray-900/50 border-gray-700 text-white focus-visible:ring-purple-600"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="role"

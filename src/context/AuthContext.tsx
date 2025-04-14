@@ -13,6 +13,8 @@ type AuthContextType = {
   signInWithGoogle: () => Promise<void>;
   isLoading: boolean;
   updateProfile: (name: string) => Promise<void>;
+  isVerified: boolean;
+  checkEmailVerification: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +31,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const { toast } = useToast();
+
+  // Check if email is verified
+  const checkEmailVerification = async () => {
+    try {
+      // Refresh the session to get the latest user info
+      const { data } = await supabase.auth.refreshSession();
+      
+      // Update session with fresh data
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        
+        // Check if email is verified
+        const isEmailVerified = data.session.user.email_confirmed_at !== null;
+        setIsVerified(isEmailVerified);
+        return isEmailVerified;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error checking email verification:", error);
+      return false;
+    }
+  };
 
   // Set up auth state listener
   useEffect(() => {
@@ -39,9 +66,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
+          // Check if email is verified when user signs in
+          if (currentSession?.user) {
+            const isEmailVerified = currentSession.user.email_confirmed_at !== null;
+            setIsVerified(isEmailVerified);
+          }
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
+          setIsVerified(false);
         }
         setIsLoading(false);
       }
@@ -51,6 +84,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      
+      // Check email verification status
+      if (currentSession?.user) {
+        const isEmailVerified = currentSession.user.email_confirmed_at !== null;
+        setIsVerified(isEmailVerified);
+      }
+      
       setIsLoading(false);
     });
 
@@ -67,10 +107,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) throw error;
       
-      toast({
-        title: "Success!",
-        description: "You've successfully signed in",
-      });
+      // Check if there are guest data to migrate
+      const hasGuestData = localStorage.getItem('xenon_todos') || localStorage.getItem('xenon_completed_todos');
+      
+      if (hasGuestData) {
+        toast({
+          title: "Guest data detected",
+          description: "Your local tasks will be synced with your account",
+        });
+      } else {
+        toast({
+          title: "Success!",
+          description: "You've successfully signed in",
+        });
+      }
     } catch (error: any) {
       console.error('Sign in error:', error);
       toast({
@@ -112,7 +162,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // First check if user already exists with this email
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: "dummy_password_to_check_existence"
+      });
+      
+      if (data?.user || (error && error.message.includes('Invalid login credentials'))) {
+        // This indicates the email exists but password doesn't match
+        toast({
+          variant: "destructive",
+          title: "Account already exists",
+          description: "An account with this email already exists. Please sign in instead.",
+        });
+        setIsLoading(false);
+        throw new Error("Account already exists");
+      }
+      
+      // If we got here, the user doesn't exist, so create a new account
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -120,13 +188,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
       
-      if (error) throw error;
+      if (signUpError) throw signUpError;
       
       toast({
         title: "Verification email sent!",
         description: "Please check your email to verify your account",
       });
     } catch (error: any) {
+      if (error.message === "Account already exists") {
+        // Already handled above
+        throw error;
+      }
       console.error('Sign up error:', error);
       toast({
         variant: "destructive",
@@ -198,7 +270,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signOut,
     signInWithGoogle,
     isLoading,
-    updateProfile
+    updateProfile,
+    isVerified,
+    checkEmailVerification
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
