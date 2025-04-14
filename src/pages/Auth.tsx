@@ -15,6 +15,34 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Check if user has completed onboarding questionnaire
+  useEffect(() => {
+    const checkFirstTimeUser = () => {
+      const hasCompletedQuestionnaire = localStorage.getItem('xenon_onboarding_completed');
+      
+      // If user is authenticated and verified but hasn't completed questionnaire
+      if (user && isVerified && !hasCompletedQuestionnaire) {
+        navigate('/questionnaire');
+        return;
+      }
+      
+      // If user is guest (skipped login) but hasn't completed questionnaire
+      if (!user && !hasCompletedQuestionnaire && !showSplash) {
+        navigate('/questionnaire');
+        return;
+      }
+      
+      // If user is authenticated and has completed questionnaire
+      if (user && isVerified && hasCompletedQuestionnaire) {
+        navigate('/home');
+      }
+    };
+    
+    if (!showSplash) {
+      checkFirstTimeUser();
+    }
+  }, [user, isVerified, showSplash, navigate]);
+
   // Check email verification status when page loads
   useEffect(() => {
     const verifyEmail = async () => {
@@ -29,7 +57,14 @@ export default function AuthPage() {
               title: "Email verified!",
               description: "Your email has been successfully verified.",
             });
-            navigate('/home');
+            
+            // Check if questionnaire is completed
+            const hasCompletedQuestionnaire = localStorage.getItem('xenon_onboarding_completed');
+            if (!hasCompletedQuestionnaire) {
+              navigate('/questionnaire');
+            } else {
+              navigate('/home');
+            }
           } else {
             // If not verified, show a notification
             toast({
@@ -43,8 +78,6 @@ export default function AuthPage() {
         } finally {
           setCheckingVerification(false);
         }
-      } else if (user && isVerified) {
-        navigate('/home');
       }
     };
     
@@ -61,7 +94,11 @@ export default function AuthPage() {
 
   // If user is already authenticated and email verified, redirect to home
   if (user && isVerified) {
-    return <Navigate to="/home" replace />;
+    const hasCompletedQuestionnaire = localStorage.getItem('xenon_onboarding_completed');
+    if (hasCompletedQuestionnaire) {
+      return <Navigate to="/home" replace />;
+    }
+    return <Navigate to="/questionnaire" replace />;
   }
 
   return (

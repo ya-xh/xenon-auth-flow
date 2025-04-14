@@ -63,6 +63,9 @@ export default function QuestionnairePage() {
       localStorage.setItem('xenon_user_role', data.role);
       localStorage.setItem('xenon_focus_hours', data.focusHours);
       
+      // Mark that the user has completed onboarding
+      localStorage.setItem('xenon_onboarding_completed', 'true');
+      
       // Navigate to home page after questionnaire
       navigate("/home");
     } catch (error) {

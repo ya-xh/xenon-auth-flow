@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,12 +8,7 @@ import { Link } from "react-router-dom";
 import FlipClock from "@/components/FlipClock";
 import FocusTimer from "@/components/FocusTimer";
 import TaskProgressBar from "@/components/TaskProgressBar";
-
-interface UserProfile {
-  name: string;
-  user_role?: string;
-  focus_hours?: number;
-}
+import MotivationalQuote from "@/components/MotivationalQuote";
 
 interface TodoItem {
   id: string;
@@ -23,58 +18,9 @@ interface TodoItem {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isGuest, setIsGuest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [recentTodos, setRecentTodos] = useState<TodoItem[]>([]);
   const [todosLoading, setTodosLoading] = useState(false);
-
-  // Fetch user profile
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      setIsLoading(true);
-      
-      // Check if this is a skipped login user
-      const storedRole = localStorage.getItem('xenon_user_role');
-      const storedHours = localStorage.getItem('xenon_focus_hours');
-      const storedName = localStorage.getItem('xenon_user_name');
-      
-      if (storedRole && !user) {
-        // This is a guest user who skipped login
-        setUserProfile({
-          name: storedName || 'Guest',
-          user_role: storedRole,
-          focus_hours: storedHours ? parseInt(storedHours) : undefined
-        });
-        setIsGuest(true);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Otherwise fetch from Supabase if logged in
-      if (user) {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('name, user_role, focus_hours')
-            .eq('id', user.id)
-            .single();
-          
-          if (data) {
-            setUserProfile(data as UserProfile);
-          } else if (error) {
-            console.error('Error fetching profile:', error);
-          }
-        } catch (error) {
-          console.error('Error fetching profile:', error);
-        }
-      }
-      
-      setIsLoading(false);
-    };
-    
-    fetchUserProfile();
-  }, [user]);
 
   // Fetch recent todos
   useEffect(() => {
@@ -107,64 +53,39 @@ export default function HomePage() {
         console.error('Error fetching todos:', error);
       } finally {
         setTodosLoading(false);
+        setIsLoading(false);
       }
     };
     
     fetchRecentTodos();
   }, [user]);
 
-  const getRoleDisplay = (role?: string) => {
-    if (!role) return '';
-    
-    const roleMap: Record<string, string> = {
-      'student': 'Student',
-      'professional': 'Working Professional',
-      'freelancer': 'Freelancer',
-      'entrepreneur': 'Entrepreneur',
-      'other': 'Other'
-    };
-    
-    return roleMap[role] || role;
-  };
-
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full max-w-4xl mx-auto p-4">
+      <div className="flex flex-col h-full max-w-4xl mx-auto p-4 space-y-6">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-start h-full pt-4">
-            <h1 className="text-4xl md:text-6xl font-mono font-light mb-6 text-center bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-              Welcome to Xenon AI
-              {userProfile?.name ? `, ${userProfile.name}` : isGuest ? ', Guest' : ''}
-            </h1>
-            
-            {userProfile?.user_role && (
-              <p className="text-xl text-purple-300 mb-4 text-center">
-                {getRoleDisplay(userProfile.user_role)}
-                {userProfile.focus_hours && ` • ${userProfile.focus_hours} hours focus time`}
-              </p>
-            )}
-
+          <div className="flex flex-col items-center justify-start h-full pt-4 space-y-8">
             {/* Flip Clock */}
-            <div className="my-6 w-full max-w-md">
+            <div className="my-6 w-full max-w-lg">
               <FlipClock />
             </div>
             
             {/* Focus Timer */}
-            <div className="my-6 w-full max-w-md">
+            <div className="w-full max-w-lg">
               <FocusTimer />
             </div>
             
             {/* Task Progress */}
-            <div className="my-6 w-full max-w-md">
+            <div className="w-full max-w-lg">
               <TaskProgressBar />
             </div>
             
             {/* Recent Todos Section */}
-            <div className="w-full max-w-md mt-6">
+            <div className="w-full max-w-lg">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl text-purple-300 font-semibold">Recent Tasks</h2>
                 <Link 
@@ -196,6 +117,11 @@ export default function HomePage() {
                   No tasks yet. Add one from the Todo page.
                 </p>
               )}
+            </div>
+            
+            {/* Motivational Quote */}
+            <div className="w-full max-w-lg">
+              <MotivationalQuote />
             </div>
           </div>
         )}

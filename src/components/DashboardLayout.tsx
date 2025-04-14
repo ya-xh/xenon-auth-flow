@@ -3,7 +3,7 @@ import React, { ReactNode } from "react";
 import { Navigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, CheckCircle, ListTodo, Settings, Menu, X, Home } from "lucide-react";
+import { MessageSquare, Brain, ListTodo, Settings, Menu, X, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -91,7 +91,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigationItems = [
     { path: '/home', label: 'Home', icon: <Home className="mr-3 h-5 w-5" /> },
     { path: '/todo', label: 'To-do', icon: <ListTodo className="mr-3 h-5 w-5" /> },
-    { path: '/completed', label: 'Completed Tasks', icon: <CheckCircle className="mr-3 h-5 w-5" /> },
+    { path: '/ai', label: 'AI Assistant', icon: <Brain className="mr-3 h-5 w-5" /> },
     { path: '/settings', label: 'Settings', icon: <Settings className="mr-3 h-5 w-5" /> },
   ];
 
